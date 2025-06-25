@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Solutions Architect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="subtitle">Next-Gen Cloud Architecture</div>
+        <h1>AI Solutions Architect</h1>
+        <div class="desc">
+            Get robust, scalable, and secure cloud infrastructure solutions powered by AI.<br>
+            Expert guidance for AWS, Azure, and Google Cloud platforms.
+        </div>
+        <div class="questions-section">
+            <div class="questions-title">Popular Architecture Questions</div>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-header aws"><span class="icon">☁️</span> AWS</div>
+                    <div class="card-questions">
+                        <div>Design a scalable web application architecture on AWS with auto-scaling and load balancing</div>
+                        <div>Help me set up a secure multi-tier application with RDS and Redis caching on AWS</div>
+                        <div>What's the best disaster recovery strategy for my AWS infrastructure?</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header azure"><span class="icon">🛡️</span> Azure</div>
+                    <div class="card-questions">
+                        <div>Create a microservices architecture on Azure with container orchestration</div>
+                        <div>Design a secure data analytics pipeline using Azure services</div>
+                        <div>How do I implement Azure Active Directory for enterprise authentication?</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header gcp"><span class="icon">⚡</span> Google Cloud</div>
+                    <div class="card-questions">
+                        <div>Build a machine learning pipeline on Google Cloud with BigQuery integration</div>
+                        <div>Design a serverless architecture using Cloud Functions and Firestore</div>
+                        <div>What's the best approach for data warehousing and analytics on GCP?</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Chat Interface -->
+        <div class="chat-section">
+            <div class="chat-header">AI Solutions Architect</div>
+            <div class="chat-messages">
+                <div class="message bot">
+                    <div class="avatar">
+                        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="18" cy="18" r="18" fill="#6c7ae0"/>
+                          <rect x="10" y="14" width="16" height="10" rx="5" fill="#fff"/>
+                          <ellipse cx="18" cy="13" rx="6" ry="5" fill="#fff"/>
+                          <ellipse cx="15.5" cy="13.5" rx="1.5" ry="2" fill="#6c7ae0"/>
+                          <ellipse cx="20.5" cy="13.5" rx="1.5" ry="2" fill="#6c7ae0"/>
+                          <rect x="15" y="19" width="6" height="2" rx="1" fill="#6c7ae0"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="bubble">Hello! I'm your AI Solutions Architect. I can help you design robust, scalable, and secure cloud infrastructure solutions for AWS, Azure, and Google Cloud. What kind of architecture challenge are you working on today?</div>
+                        <div class="timestamp" id="init-time"></div>
+                    </div>
+                </div>
+            </div>
+            <form class="chat-form">
+                <div class="chat-input-row">
+                    <input class="chat-input" type="text" placeholder="Describe your architecture requirements..." autocomplete="off" />
+                    <button class="send-btn" type="submit" title="Send">
+                        <svg width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.5 18.5l15-7-15-7v5.5l10 1.5-10 1.5V18.5z" fill="#fff"/></svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/script.js"></script>
+    <script>
+        // Set initial timestamp
+        document.getElementById('init-time').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    </script>
+</body>
+</html>

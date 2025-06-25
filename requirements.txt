@@ -1,0 +1,12 @@
+# AI Agent required libraries
+langgraph
+langsmith
+langchain
+dotenv
+
+# fast api for building APIs
+fastapi
+uvicorn
+jinja2
+redis
+
