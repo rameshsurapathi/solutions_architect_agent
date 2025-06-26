@@ -3,6 +3,7 @@ langgraph
 langsmith
 langchain
 dotenv
+langchain-google-genai
 
 # fast api for building APIs
 fastapi
