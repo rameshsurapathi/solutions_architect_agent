@@ -20,7 +20,7 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
 
 - **AI-Powered Responses:**
   - Uses LLMs (OpenAI, Gemini, etc.) with a custom system prompt for expert, blog-style output.
-  - Caches responses with Redis for speed and efficiency.
+  - Caches responses with Firestore for speed and efficiency.
   - Rate-limits chat requests to prevent abuse.
 
 - **Extensible Backend:**
@@ -31,7 +31,7 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
 ## How It Works
 
 1. **User submits a cloud architecture question via the chat UI.**
-2. **The backend checks Redis for a cached answer.**
+2. **The backend checks Firestore for a cached answer.**
 3. **If not cached, the AI agent generates a detailed, blog-style response using the latest LLMs and a custom prompt.**
 4. **The response is rendered in the chat with beautiful formatting for easy reading.**
 
@@ -41,7 +41,7 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
 - FastAPI
 - Uvicorn
 - LangChain, LangGraph
-- Redis (for caching)
+- Google Firestore (for caching)
 - Node.js (optional, for frontend tooling)
 
 ## Setup
@@ -51,7 +51,7 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
    ```sh
    pip install -r requirements.txt
    ```
-3. Start Redis server locally.
+3. Set up Google Firestore and authentication (see Google Cloud docs).
 4. Set your LLM API keys in `.env` (e.g., `OPENAI_API_KEY`).
 5. Run the FastAPI server:
    ```sh
