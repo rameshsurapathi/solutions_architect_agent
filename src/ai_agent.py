@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
@@ -15,9 +16,10 @@ from src.langsmith_debug import LANGSMITH_API_KEY,LANGSMITH_ENDPOINT,LANGSMITH_P
 # Load environment variables from .env file
 load_dotenv()
 
-# setting up redis for caching
-import redis
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
+# setting up Firestore for caching
+from firebase_admin import firestore, initialize_app
+initialize_app()
+db = firestore.client()
 
 import hashlib
 
@@ -34,17 +36,28 @@ class AI_Agent:
     def get_response(self, user_message: str) -> str:
         # Use a hash of the user message as the cache key
         cache_key = f"ai_response:{hashlib.sha256(user_message.encode()).hexdigest()}"
-        cached = redis_client.get(cache_key)
-        if cached:
-            return cached.decode('utf-8')
+        cached = db.collection("cache").document(cache_key).get()
+        if cached.exists:
+            data = cached.to_dict()
+            expires = data.get("expires")
+            if expires and expires > datetime.now():
+                return data.get("response")
+            else:
+                # Optionally delete expired cache
+                db.collection("cache").document(cache_key).delete()
         # Compose messages for the LLM
         messages = [
             SystemMessage(content=self.system_prompt),
             HumanMessage(content=user_message)
         ]
         response = self.llm(messages)
-        # Cache the response for 24 hours (86400 seconds)
-        redis_client.setex(cache_key, 86400, response.content)
+        
+        # Store the response in Firestore cache with a 1-day expiration
+        from datetime import timedelta
+        db.collection("cache").document(cache_key).set({
+            "response": response.content,
+            "expires": datetime.now() + timedelta(days=1)
+        })
         return response.content
 
 def main():

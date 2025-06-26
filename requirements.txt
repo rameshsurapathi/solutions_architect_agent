@@ -8,5 +8,7 @@ dotenv
 fastapi
 uvicorn
 jinja2
-redis
+#redis
+firebase-admin
+datetime
 
