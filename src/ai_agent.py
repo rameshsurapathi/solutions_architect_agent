@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
@@ -40,7 +40,7 @@ class AI_Agent:
         if cached.exists:
             data = cached.to_dict()
             expires = data.get("expires")
-            if expires and expires > datetime.now():
+            if expires and expires > datetime.now(timezone.utc):
                 return data.get("response")
             else:
                 # Optionally delete expired cache
@@ -56,7 +56,7 @@ class AI_Agent:
         from datetime import timedelta
         db.collection("cache").document(cache_key).set({
             "response": response.content,
-            "expires": datetime.now() + timedelta(days=1)
+            "expires": datetime.now(timezone.utc) + timedelta(days=1)
         })
         return response.content
 
