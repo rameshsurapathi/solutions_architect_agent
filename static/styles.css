@@ -154,12 +154,11 @@ h1 {
     font-size: 1rem;
     color: #222;
     box-shadow: 0 1px 4px rgba(80, 90, 180, 0.04);
-    width: 100%; /* Use full width of chat area */
-    max-width: 100%;
+    max-width: calc(100% - 60px); /* Restrict width, accounting for avatar */
     box-sizing: border-box;
-    overflow-x: auto;
+    overflow-wrap: break-word;
     word-break: break-word;
-    white-space: pre-line;
+    white-space: pre-wrap;
     line-height: 1.7;
 }
 .message.bot .bubble {
@@ -170,7 +169,7 @@ h1 {
     color: #2a2a2a;
     padding: 18px 28px;
     margin-bottom: 2px;
-    width: 100%;
+    max-width: calc(100% - 60px);
 }
 .message.bot .bubble * {
     margin-top: 0;
