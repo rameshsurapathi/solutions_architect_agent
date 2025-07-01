@@ -82,7 +82,9 @@ async function sendChatMessage(message) {
     document.querySelectorAll('.card-questions div, .quick-action, .send-btn').forEach(el => el.disabled = true);
 
     try {
-        const res = await fetch('chat', {
+        const apiUrl = 'https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat';
+        
+        const res = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
