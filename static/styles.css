@@ -154,7 +154,7 @@ h1 {
     font-size: 1rem;
     color: #222;
     box-shadow: 0 1px 4px rgba(80, 90, 180, 0.04);
-    max-width: calc(100% - 60px); /* Restrict width, accounting for avatar */
+    max-width: calc(100% - 60px); /* Back to original width calculation */
     box-sizing: border-box;
     overflow-wrap: break-word;
     word-break: break-word;
@@ -169,7 +169,7 @@ h1 {
     color: #2a2a2a;
     padding: 18px 28px;
     margin-bottom: 2px;
-    max-width: calc(100% - 60px);
+    max-width: calc(100% - 60px); /* Back to original width calculation */
 }
 .message.bot .bubble * {
     margin-top: 0;
