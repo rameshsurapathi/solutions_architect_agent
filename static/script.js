@@ -40,6 +40,37 @@ function getBotAvatar() {
     `;
 }
 
+function saveToPDF(element) {
+    try {
+        // Get the text content from the message bubble
+        const bubble = element.closest('.message').querySelector('.bubble');
+        const content = bubble.textContent || bubble.innerText || '';
+        
+        // Create a new jsPDF instance
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Add title
+        doc.setFontSize(16);
+        doc.text('AI Solutions Architect Response', 20, 20);
+        
+        // Add timestamp
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 30);
+        
+        // Add content
+        doc.setFontSize(12);
+        const splitText = doc.splitTextToSize(content, 170);
+        doc.text(splitText, 20, 45);
+        
+        // Download the PDF
+        doc.save(`ai-response-${Date.now()}.pdf`);
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Sorry, there was an error generating the PDF.');
+    }
+}
+
 function appendMessage(text, isBot = false) {
     const now = new Date();
     const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -52,6 +83,7 @@ function appendMessage(text, isBot = false) {
         <div>
             <div class="bubble">${isBot ? marked.parse(content) : escapeHtml(content)}</div>
             <div class="timestamp">${time}</div>
+            ${isBot ? `<button class="save-pdf-btn" onclick="saveToPDF(this)" title="Save response to PDF">📄 Save PDF</button>` : ''}
         </div>
     `;
     chatMessages.appendChild(msgDiv);
