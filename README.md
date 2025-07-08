@@ -8,6 +8,10 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
   - Modern, responsive chat UI for seamless interaction.
   - Quick-select sample questions and architecture topics.
   - Markdown and HTML rendering for clear, blog-style answers.
+  - **NEW: Persistent Chat Memory** - Automatically loads last 5 chat interactions when users revisit the page.
+  - **NEW: Chat History Management** - View, manage, and delete complete chat history with modal interface.
+  - **NEW: Session Continuity** - "New Chat", "View Chat History", and "Delete Chat History" controls.
+  - **NEW: PDF Export** - Save AI responses as formatted PDF documents.
 
 - **Expert Cloud Guidance:**
   - Detailed, actionable solutions for cloud architecture, security, disaster recovery, and more.
@@ -20,20 +24,27 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
 
 - **AI-Powered Responses:**
   - Uses LLMs (OpenAI, Gemini, etc.) with a custom system prompt for expert, blog-style output.
-  - Caches responses with Firestore for speed and efficiency.
+  - Intelligent response caching with Firestore for speed and efficiency.
+  - **NEW: User-Specific Chat History** - Stores all conversations per user using browser fingerprinting.
+  - **NEW: Context-Aware Conversations** - Uses previous chat history to provide contextual responses.
   - Rate-limits chat requests to prevent abuse.
 
 - **Extensible Backend:**
   - Built with FastAPI for easy API integration and deployment.
   - Modular agent logic using LangChain and LangGraph.
   - Prompts and agent logic separated for easy customization.
+  - **NEW: RESTful Chat History APIs** - GET, POST, DELETE endpoints for chat history management.
+  - **NEW: Browser Fingerprinting** - Anonymous user identification without registration.
+  - **NEW: Firestore Chat Storage** - Persistent chat history stored in `sa-chat-history` collection.
 
 ## How It Works
 
-1. **User submits a cloud architecture question via the chat UI.**
-2. **The backend checks Firestore for a cached answer.**
-3. **If not cached, the AI agent generates a detailed, blog-style response using the latest LLMs and a custom prompt.**
-4. **The response is rendered in the chat with beautiful formatting for easy reading.**
+1. **User visits the page** - Last 5 chat interactions are automatically loaded for session continuity
+2. **User submits a question** - Via the modern chat UI with quick-select topics
+3. **Backend checks cache** - Firestore is queried for existing responses to improve speed
+4. **AI generates response** - If not cached, the AI agent creates a detailed, blog-style answer
+5. **Response is stored** - All conversations are saved to user-specific chat history
+6. **Beautiful rendering** - Markdown-formatted responses with syntax highlighting
 
 ## Requirements
 
@@ -65,11 +76,36 @@ AI Solutions Architect is an advanced web-based assistant that provides robust, 
 - **Agent Logic:** Extend `src/ai_agent.py` for tool use, retrieval, or multi-step workflows.
 - **Frontend:** Update `templates/index.html` and `static/` for UI/UX changes.
 
+## Architecture
+
+- **Frontend:** Pure HTML, CSS, and JavaScript with a modern, responsive design
+- **Backend:** FastAPI with RESTful endpoints for chat and history management
+- **AI Engine:** LangChain/LangGraph for intelligent conversation flow
+- **Database:** Google Firestore for persistent chat history and response caching
+- **User Identity:** Browser fingerprinting for anonymous user identification
+
+## API Endpoints
+
+- `POST /chat` - Send a message and get AI response
+- `GET /chat/history` - Retrieve user's chat history
+- `DELETE /chat/history` - Delete all chat history for user
+- `GET /` - Serve the main chat interface
+
+## Technical Features
+
+- **Persistent Chat Memory:** Automatically loads last 5 conversations on page revisit
+- **Context-Aware Responses:** AI maintains conversation context across sessions
+- **Intelligent Caching:** Firestore-based response caching for improved performance
+- **Browser Fingerprinting:** Anonymous user identification using SHA-256 hashing
+- **Error Handling:** Robust error handling with user-friendly fallbacks
+- **Rate Limiting:** Built-in protection against abuse
+- **Debug Logging:** Comprehensive logging for troubleshooting and monitoring
+
 ## Roadmap
-- Image generation for architecture diagrams.
-- User authentication and chat history.
-- Integration with cloud provider APIs for live recommendations.
-- More advanced multi-step reasoning and tool use.
+- Image generation for architecture diagrams
+- Integration with cloud provider APIs for live recommendations
+- More advanced multi-step reasoning and tool use
+- Advanced user analytics and conversation insights
 
 ## License
 MIT
