@@ -36,10 +36,9 @@ class AI_Agent:
         """Generate a consistent user ID from browser fingerprint"""
         return hashlib.sha256(user_fingerprint.encode()).hexdigest()[:16]
 
-    def get_chat_history(self, user_fingerprint: str, limit: int = 10) -> List[Dict]:
+    def get_chat_history(self, user_id: str, limit: int = 10) -> List[Dict]:
         """Retrieve recent chat history for context"""
         try:
-            user_id = self.get_user_id(user_fingerprint)
             print(f"Getting chat history for user_id: {user_id}")
             
             # Get chat history from last 7 days
@@ -72,10 +71,9 @@ class AI_Agent:
             traceback.print_exc()
             return []
 
-    def store_chat_history(self, user_fingerprint: str, user_message: str, ai_response: str):
+    def store_chat_history(self, user_id: str, user_message: str, ai_response: str):
         """Store chat interaction for future context"""
         try:
-            user_id = self.get_user_id(user_fingerprint)
             print(f"Storing chat history for user_id: {user_id}")
             
             result = db.collection("sa-chat-history").add({
@@ -90,24 +88,40 @@ class AI_Agent:
             import traceback
             traceback.print_exc()
 
-    def get_response(self, user_message: str, user_fingerprint: str = None) -> str:
+    def get_response(self, user_message: str, user_id: str = None) -> str:
         # Use a hash of the user message as the cache key
         cache_key = f"ai_response:{hashlib.sha256(user_message.encode()).hexdigest()}"
-        cached = db.collection("cache").document(cache_key).get()
-        if cached.exists:
-            data = cached.to_dict()
-            expires = data.get("expires")
-            if expires and expires > datetime.now(timezone.utc):
-                return data.get("response")
-            else:
-                # Optionally delete expired cache
-                db.collection("cache").document(cache_key).delete()
         
-        # Get chat history for context if user fingerprint is provided
+        # Check cache only if Firebase is initialized
+        cached_response = None
+        if db is not None:
+            try:
+                cached = db.collection("cache").document(cache_key).get()
+                if cached.exists:
+                    data = cached.to_dict()
+                    expires = data.get("expires")
+                    if expires and expires > datetime.now(timezone.utc):
+                        cached_response = data.get("response")
+                        print("Using cached response")
+                    else:
+                        # Optionally delete expired cache
+                        db.collection("cache").document(cache_key).delete()
+            except Exception as e:
+                print(f"Error checking cache: {e}")
+        
+        # If we have a cached response, use it
+        if cached_response:
+            # Store cached response in user's chat history
+            if user_id:
+                self.store_chat_history(user_id, user_message, cached_response)
+            return cached_response
+        
+        # Generate new response if not cached
+        # Get chat history for context if user ID is provided
         messages = [SystemMessage(content=self.system_prompt)]
         
-        if user_fingerprint:
-            chat_history = self.get_chat_history(user_fingerprint, limit=5)  # Last 5 conversations
+        if user_id:
+            chat_history = self.get_chat_history(user_id, limit=5)  # Last 5 conversations
             if chat_history:
                 # Add context from previous conversations
                 context_message = "Previous conversation context:\n"
@@ -122,26 +136,34 @@ class AI_Agent:
         response = self.llm(messages)
         
         # Store the response in Firestore cache with 1-month expiration
-        from datetime import timedelta
-        db.collection("cache").document(cache_key).set({
-            "response": response.content,
-            "expires": datetime.now(timezone.utc) + timedelta(days=30)  # Extended to 1 month
-        })
+        if db is not None:
+            try:
+                from datetime import timedelta
+                db.collection("cache").document(cache_key).set({
+                    "response": response.content,
+                    "expires": datetime.now(timezone.utc) + timedelta(days=30)  # Extended to 1 month
+                })
+            except Exception as e:
+                print(f"Error storing cache: {e}")
         
         # Store chat history for future context
-        if user_fingerprint:
-            self.store_chat_history(user_fingerprint, user_message, response.content)
+        if user_id:
+            self.store_chat_history(user_id, user_message, response.content)
         
         return response.content
 
-    def get_user_chat_history(self, user_fingerprint: str, limit: int = 20) -> List[Dict]:
+    def get_user_chat_history(self, user_id: str, limit: int = 20) -> List[Dict]:
         """Get user's chat history for display purposes"""
-        return self.get_chat_history(user_fingerprint, limit)
+        return self.get_chat_history(user_id, limit)
 
-    def delete_user_chat_history(self, user_fingerprint: str) -> bool:
+    def delete_user_chat_history(self, user_id: str) -> bool:
         """Delete all chat history for a user"""
         try:
-            user_id = self.get_user_id(user_fingerprint)
+            if db is None:
+                print("Firebase not initialized, cannot delete chat history")
+                return False
+                
+            print(f"Deleting chat history for user_id: {user_id}")
             
             # Get all chat history documents for this user
             chats = db.collection("sa-chat-history").where("user_id", "==", user_id).stream()

@@ -34,11 +34,11 @@ rate_limit_data = defaultdict(list)
 # Define the request model for chat messages
 class ChatRequest(BaseModel):
     message: str
-    user_fingerprint: str = None
+    user_id: str = None
 
 # Define the request model for chat history
 class ChatHistoryRequest(BaseModel):
-    user_fingerprint: str
+    user_id: str
     limit: int = 10
 
 @app.get("/", response_class=HTMLResponse)
@@ -62,7 +62,7 @@ async def chat_endpoint(request: Request, chat: ChatRequest):
         raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not found in environment variables.")
     
     agent = AI_Agent(api_key)
-    response = agent.get_response(chat.message, chat.user_fingerprint)
+    response = agent.get_response(chat.message, chat.user_id)
     return JSONResponse({
         "response": response
     })
@@ -85,7 +85,7 @@ async def get_chat_history(request: Request, history_request: ChatHistoryRequest
         raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not found in environment variables.")
     
     agent = AI_Agent(api_key)
-    history = agent.get_user_chat_history(history_request.user_fingerprint, history_request.limit)
+    history = agent.get_user_chat_history(history_request.user_id, history_request.limit)
     print(f"Returning {len(history)} chat history entries")
     return JSONResponse({
         "history": history
@@ -108,7 +108,7 @@ async def delete_chat_history(request: Request, history_request: ChatHistoryRequ
         raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not found in environment variables.")
     
     agent = AI_Agent(api_key)
-    success = agent.delete_user_chat_history(history_request.user_fingerprint)
+    success = agent.delete_user_chat_history(history_request.user_id)
     return JSONResponse({
         "success": success,
         "message": "Chat history deleted successfully" if success else "Failed to delete chat history"

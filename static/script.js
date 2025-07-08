@@ -20,27 +20,41 @@ function generateUserFingerprint() {
     return btoa(fingerprint).slice(0, 32); // Base64 encode and truncate
 }
 
-// Get or create user fingerprint
-function getUserFingerprint() {
-    let fingerprint = localStorage.getItem('user_fingerprint');
-    if (!fingerprint) {
-        fingerprint = generateUserFingerprint();
-        localStorage.setItem('user_fingerprint', fingerprint);
+// Generate user ID from fingerprint (for consistent backend storage)
+async function generateUserId() {
+    const fingerprint = generateUserFingerprint();
+    
+    // Use Web Crypto API for consistent hashing (like backend SHA256)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(fingerprint);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    return hashHex.slice(0, 16); // Match backend truncation
+}
+
+// Get or create user ID
+async function getUserId() {
+    let userId = localStorage.getItem('user_id');
+    if (!userId) {
+        userId = await generateUserId();
+        localStorage.setItem('user_id', userId);
     }
-    return fingerprint;
+    return userId;
 }
 
 // Load recent chat history on page load for conversation continuity
 async function loadChatHistory() {
     console.log('Loading chat history...');
     try {
-        const fingerprint = getUserFingerprint();
-        console.log('User fingerprint:', fingerprint);
+        const userId = await getUserId();
+        console.log('User ID:', userId);
         const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                user_fingerprint: fingerprint,
+                user_id: userId,
                 limit: 5  // Load only last 5 interactions for seamless continuation
             })
         });
@@ -394,14 +408,14 @@ async function sendChatMessage(message) {
 
     try {
         const apiUrl = 'https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat';
-        const fingerprint = getUserFingerprint();
+        const userId = await getUserId();
         
         const res = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 message: message,
-                user_fingerprint: fingerprint 
+                user_id: userId 
             })
         });
         if (!res.ok) {
@@ -479,13 +493,13 @@ async function viewChatHistory() {
     modal.style.display = 'flex';
     
     try {
-        const fingerprint = getUserFingerprint();
-        console.log('Fetching chat history for fingerprint:', fingerprint);
+        const userId = await getUserId();
+        console.log('Fetching chat history for user ID:', userId);
         const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                user_fingerprint: fingerprint,
+                user_id: userId,
                 limit: 50 
             })
         });
@@ -570,12 +584,12 @@ function closeHistoryModal() {
 async function deleteChatHistory() {
     if (confirm('This will permanently delete all your chat history. This action cannot be undone. Continue?')) {
         try {
-            const fingerprint = getUserFingerprint();
+            const userId = await getUserId();
             const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    user_fingerprint: fingerprint 
+                    user_id: userId 
                 })
             });
             
