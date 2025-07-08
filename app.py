@@ -70,6 +70,7 @@ async def chat_endpoint(request: Request, chat: ChatRequest):
 @app.post("/chat-history")
 async def get_chat_history(request: Request, history_request: ChatHistoryRequest):
     """Get user's chat history"""
+    print(f"Received chat history request: {history_request}")
     client_ip = request.client.host
     now = time.time()
     timestamps = rate_limit_data[client_ip]
@@ -85,6 +86,7 @@ async def get_chat_history(request: Request, history_request: ChatHistoryRequest
     
     agent = AI_Agent(api_key)
     history = agent.get_user_chat_history(history_request.user_fingerprint, history_request.limit)
+    print(f"Returning {len(history)} chat history entries")
     return JSONResponse({
         "history": history
     })

@@ -32,8 +32,10 @@ function getUserFingerprint() {
 
 // Load recent chat history on page load for conversation continuity
 async function loadChatHistory() {
+    console.log('Loading chat history...');
     try {
         const fingerprint = getUserFingerprint();
+        console.log('User fingerprint:', fingerprint);
         const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -43,8 +45,10 @@ async function loadChatHistory() {
             })
         });
         
+        console.log('Chat history response status:', response.status);
         if (response.ok) {
             const data = await response.json();
+            console.log('Chat history data:', data);
             if (data.history && data.history.length > 0) {
                 // Clear the initial greeting message if we have previous history
                 const chatMessages = document.querySelector('.chat-messages');
@@ -93,15 +97,17 @@ async function loadChatHistory() {
                 
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             } else {
+                console.log('No chat history found');
                 // No previous history, show the welcome message
                 showWelcomeMessage();
             }
         } else {
+            console.error('Chat history API error:', response.status, response.statusText);
             // If API fails, show welcome message
             showWelcomeMessage();
         }
     } catch (error) {
-        console.log('Could not load chat history:', error);
+        console.error('Could not load chat history:', error);
         // If there's an error, show welcome message
         showWelcomeMessage();
     }
@@ -459,6 +465,7 @@ function startNewChat() {
 
 // View Chat History functionality
 async function viewChatHistory() {
+    console.log('Viewing chat history...');
     const modal = document.getElementById('historyModal');
     const historyContent = document.getElementById('historyContent');
     
@@ -473,6 +480,7 @@ async function viewChatHistory() {
     
     try {
         const fingerprint = getUserFingerprint();
+        console.log('Fetching chat history for fingerprint:', fingerprint);
         const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -482,10 +490,13 @@ async function viewChatHistory() {
             })
         });
         
+        console.log('View chat history response status:', response.status);
         if (response.ok) {
             const data = await response.json();
+            console.log('View chat history data:', data);
             displayChatHistory(data.history);
         } else {
+            console.error('View chat history API error:', response.status, response.statusText);
             throw new Error('Failed to load chat history');
         }
     } catch (error) {

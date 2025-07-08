@@ -40,6 +40,7 @@ class AI_Agent:
         """Retrieve recent chat history for context"""
         try:
             user_id = self.get_user_id(user_fingerprint)
+            print(f"Getting chat history for user_id: {user_id}")
             
             # Get chat history from last 7 days
             from datetime import timedelta
@@ -50,30 +51,44 @@ class AI_Agent:
             history = []
             for chat in chats:
                 data = chat.to_dict()
+                timestamp = data.get("timestamp")
+                # Convert Firestore timestamp to ISO format for JavaScript
+                if timestamp:
+                    timestamp_iso = timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp)
+                else:
+                    timestamp_iso = datetime.now(timezone.utc).isoformat()
+                    
                 history.append({
                     "user_message": data.get("user_message"),
                     "ai_response": data.get("ai_response"),
-                    "timestamp": data.get("timestamp")
+                    "timestamp": timestamp_iso
                 })
             
+            print(f"Found {len(history)} chat history entries")
             return list(reversed(history))  # Return in chronological order
         except Exception as e:
             print(f"Error retrieving chat history: {e}")
+            import traceback
+            traceback.print_exc()
             return []
 
     def store_chat_history(self, user_fingerprint: str, user_message: str, ai_response: str):
         """Store chat interaction for future context"""
         try:
             user_id = self.get_user_id(user_fingerprint)
+            print(f"Storing chat history for user_id: {user_id}")
             
-            db.collection("sa-chat-history").add({
+            result = db.collection("sa-chat-history").add({
                 "user_id": user_id,
                 "user_message": user_message,
                 "ai_response": ai_response,
                 "timestamp": datetime.now(timezone.utc)
             })
+            print(f"Chat history stored successfully with ID: {result[1].id}")
         except Exception as e:
             print(f"Error storing chat history: {e}")
+            import traceback
+            traceback.print_exc()
 
     def get_response(self, user_message: str, user_fingerprint: str = None) -> str:
         # Use a hash of the user message as the cache key
