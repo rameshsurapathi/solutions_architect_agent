@@ -45,7 +45,7 @@ class AI_Agent:
             from datetime import timedelta
             cutoff_date = datetime.now(timezone.utc) - timedelta(days=7)
             
-            chats = db.collection("chat_history").where("user_id", "==", user_id).where("timestamp", ">=", cutoff_date).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()
+            chats = db.collection("sa-chat-history").where("user_id", "==", user_id).where("timestamp", ">=", cutoff_date).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()
             
             history = []
             for chat in chats:
@@ -66,7 +66,7 @@ class AI_Agent:
         try:
             user_id = self.get_user_id(user_fingerprint)
             
-            db.collection("chat_history").add({
+            db.collection("sa-chat-history").add({
                 "user_id": user_id,
                 "user_message": user_message,
                 "ai_response": ai_response,
@@ -129,11 +129,11 @@ class AI_Agent:
             user_id = self.get_user_id(user_fingerprint)
             
             # Get all chat history documents for this user
-            chats = db.collection("chat_history").where("user_id", "==", user_id).stream()
+            chats = db.collection("sa-chat-history").where("user_id", "==", user_id).stream()
             
             # Delete all documents
             for chat in chats:
-                db.collection("chat_history").document(chat.id).delete()
+                db.collection("sa-chat-history").document(chat.id).delete()
             
             return True
         except Exception as e:

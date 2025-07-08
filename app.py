@@ -28,7 +28,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Simple in-memory rate limiter: {ip: [timestamps]}
 rate_limit_window = 60  # seconds
-rate_limit_count = 5
+rate_limit_count = 10
 rate_limit_data = defaultdict(list)
 
 # Define the request model for chat messages
@@ -39,7 +39,7 @@ class ChatRequest(BaseModel):
 # Define the request model for chat history
 class ChatHistoryRequest(BaseModel):
     user_fingerprint: str
-    limit: int = 20
+    limit: int = 10
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):

@@ -30,7 +30,7 @@ function getUserFingerprint() {
     return fingerprint;
 }
 
-// Load chat history on page load
+// Load recent chat history on page load for conversation continuity
 async function loadChatHistory() {
     try {
         const fingerprint = getUserFingerprint();
@@ -39,30 +39,99 @@ async function loadChatHistory() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 user_fingerprint: fingerprint,
-                limit: 10 
+                limit: 5  // Load only last 5 interactions for seamless continuation
             })
         });
         
         if (response.ok) {
             const data = await response.json();
             if (data.history && data.history.length > 0) {
-                // Display chat history
-                data.history.forEach(chat => {
-                    const timestamp = new Date(chat.timestamp).toLocaleString();
-                    appendMessage(chat.user_message, false, timestamp);
-                    appendMessage(chat.ai_response, true, timestamp);
+                // Clear the initial greeting message if we have previous history
+                const chatMessages = document.querySelector('.chat-messages');
+                chatMessages.innerHTML = '';
+                
+                // Add a subtle indicator that previous conversation is being restored
+                const restoringDiv = document.createElement('div');
+                restoringDiv.className = 'conversation-restored';
+                restoringDiv.innerHTML = `
+                    <div class="restore-indicator">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        <span>Conversation restored</span>
+                    </div>
+                `;
+                chatMessages.appendChild(restoringDiv);
+                
+                // Display recent chat history with natural timestamps
+                data.history.forEach((chat, index) => {
+                    const chatDate = new Date(chat.timestamp);
+                    const now = new Date();
+                    const isToday = chatDate.toDateString() === now.toDateString();
+                    const isYesterday = new Date(now - 24*60*60*1000).toDateString() === chatDate.toDateString();
+                    
+                    let displayTime;
+                    if (isToday) {
+                        displayTime = chatDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } else if (isYesterday) {
+                        displayTime = 'Yesterday ' + chatDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    } else {
+                        displayTime = chatDate.toLocaleDateString() + ' ' + chatDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+                    
+                    appendMessage(chat.user_message, false, displayTime);
+                    appendMessage(chat.ai_response, true, displayTime);
                 });
                 
-                // Add separator
-                const separator = document.createElement('div');
-                separator.className = 'chat-separator';
-                separator.innerHTML = '<hr><small>Previous conversations loaded</small><hr>';
-                chatMessages.appendChild(separator);
+                // Remove the restore indicator after a brief moment
+                setTimeout(() => {
+                    if (restoringDiv.parentNode) {
+                        restoringDiv.remove();
+                    }
+                }, 3000);
+                
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                // No previous history, show the welcome message
+                showWelcomeMessage();
             }
+        } else {
+            // If API fails, show welcome message
+            showWelcomeMessage();
         }
     } catch (error) {
         console.log('Could not load chat history:', error);
+        // If there's an error, show welcome message
+        showWelcomeMessage();
+    }
+}
+
+// Show welcome message for new users or when history fails to load
+function showWelcomeMessage() {
+    const chatMessages = document.querySelector('.chat-messages');
+    const welcomeMessage = `
+        <div class="message bot">
+            <div class="avatar">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="18" cy="18" r="18" fill="#6c7ae0"/>
+                  <rect x="10" y="14" width="16" height="10" rx="5" fill="#fff"/>
+                  <ellipse cx="18" cy="13" rx="6" ry="5" fill="#fff"/>
+                  <ellipse cx="15.5" cy="13.5" rx="1.5" ry="2" fill="#6c7ae0"/>
+                  <ellipse cx="20.5" cy="13.5" rx="1.5" ry="2" fill="#6c7ae0"/>
+                  <rect x="15" y="19" width="6" height="2" rx="1" fill="#6c7ae0"/>
+                </svg>
+            </div>
+            <div>
+                <div class="bubble">Hello! I'm your AI Solutions Architect. I can help you design robust, scalable, and secure cloud infrastructure solutions for AWS, Azure, and Google Cloud. What kind of architecture challenge are you working on today?</div>
+                <div class="timestamp">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+            </div>
+        </div>
+    `;
+    
+    // Only add welcome message if chat is empty
+    if (chatMessages.children.length === 0) {
+        chatMessages.innerHTML = welcomeMessage;
     }
 }
 
