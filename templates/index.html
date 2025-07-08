@@ -55,7 +55,32 @@
         </div>
         <!-- Chat Interface -->
         <div class="chat-section">
-            <div class="chat-header">AI Solutions Architect</div>
+            <div class="chat-header-row">
+                <div class="chat-header">AI Solutions Architect</div>
+                <div class="chat-controls">
+                    <button class="chat-btn new-chat-btn" onclick="startNewChat()" title="Start a new conversation">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M2 1a1 1 0 0 0-1 1v9.586l2-2A2 2 0 0 1 4.414 9H15a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H2z"/>
+                            <path d="M3 4v1h10V4H3zm0 2v1h7V6H3zm0 2v1h4V8H3z"/>
+                        </svg>
+                        New Chat
+                    </button>
+                    <button class="chat-btn history-btn" onclick="viewChatHistory()" title="View conversation history">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        History
+                    </button>
+                    <button class="chat-btn delete-btn" onclick="deleteChatHistory()" title="Delete all conversation history">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                            <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                        </svg>
+                        Delete
+                    </button>
+                </div>
+            </div>
             <div class="chat-messages">
                 <div class="message bot">
                     <div class="avatar">
@@ -82,6 +107,25 @@
                     </button>
                 </div>
             </form>
+        </div>
+        
+        <!-- Chat History Modal -->
+        <div id="historyModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Chat History</h2>
+                    <button class="close-btn" onclick="closeHistoryModal()">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyContent">
+                        <!-- History items will be populated here -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

@@ -66,84 +66,6 @@ async function loadChatHistory() {
     }
 }
 
-function appendMessage(text, isBot = false, customTimestamp = null) {
-    const now = new Date();
-    const time = customTimestamp || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'message ' + (isBot ? 'bot' : 'user');
-    let content = isBot ? cleanBotResponse(text) : text;
-    // Convert Markdown to HTML for bot responses
-    msgDiv.innerHTML = `
-        <div class="avatar">${isBot ? getBotAvatar() : '🧑'}</div>
-        <div>
-            <div class="bubble">${isBot ? marked.parse(content) : escapeHtml(content)}</div>
-            <div class="timestamp">${time}</div>
-            ${isBot ? `<button class="save-pdf-btn" onclick="saveToPDF(this)" title="Save response to PDF">📄 Save PDF</button>` : ''}
-        </div>
-    `;
-    chatMessages.appendChild(msgDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}  
-    const fingerprint = [
-        navigator.userAgent,
-        navigator.language,
-        screen.width + 'x' + screen.height,
-        screen.colorDepth,
-        new Date().getTimezoneOffset(),
-        !!window.sessionStorage,
-        !!window.localStorage,
-        canvas.toDataURL()
-    ].join('|');
-    
-    return btoa(fingerprint).slice(0, 32); // Base64 encode and truncate
-}
-
-// Get or create user fingerprint
-function getUserFingerprint() {
-    let fingerprint = localStorage.getItem('user_fingerprint');
-    if (!fingerprint) {
-        fingerprint = generateUserFingerprint();
-        localStorage.setItem('user_fingerprint', fingerprint);
-    }
-    return fingerprint;
-}
-
-// Load chat history on page load
-async function loadChatHistory() {
-    try {
-        const fingerprint = getUserFingerprint();
-        const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                user_fingerprint: fingerprint,
-                limit: 10 
-            })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.history && data.history.length > 0) {
-                // Display chat history
-                data.history.forEach(chat => {
-                    const timestamp = new Date(chat.timestamp).toLocaleString();
-                    appendMessage(chat.user_message, false, timestamp);
-                    appendMessage(chat.ai_response, true, timestamp);
-                });
-                
-                // Add separator
-                const separator = document.createElement('div');
-                separator.className = 'chat-separator';
-                separator.innerHTML = '<hr><small>Previous conversations loaded</small><hr>';
-                chatMessages.appendChild(separator);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        }
-    } catch (error) {
-        console.log('Could not load chat history:', error);
-    }
-}
-
 // Card question click event
 const cardQuestions = document.querySelectorAll('.card-questions div');
 cardQuestions.forEach(q => {
@@ -353,9 +275,9 @@ function cleanContentForPDF(content) {
     return cleaned;
 }
 
-function appendMessage(text, isBot = false, timestamp = '') {
+function appendMessage(text, isBot = false, customTimestamp = null) {
     const now = new Date();
-    const time = timestamp || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const time = customTimestamp || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message ' + (isBot ? 'bot' : 'user');
     let content = isBot ? cleanBotResponse(text) : text;
@@ -438,4 +360,168 @@ if (chatForm) {
 // Load chat history when page loads
 document.addEventListener('DOMContentLoaded', function() {
     loadChatHistory();
+});
+
+// New Chat functionality
+function startNewChat() {
+    if (confirm('This will clear the current conversation. Continue?')) {
+        // Clear chat messages but keep the initial greeting
+        const chatMessages = document.querySelector('.chat-messages');
+        chatMessages.innerHTML = `
+            <div class="message bot">
+                <div class="avatar">
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="18" cy="18" r="18" fill="#6c7ae0"/>
+                      <rect x="10" y="14" width="16" height="10" rx="5" fill="#fff"/>
+                      <ellipse cx="18" cy="13" rx="6" ry="5" fill="#fff"/>
+                      <ellipse cx="15.5" cy="13.5" rx="1.5" ry="2" fill="#6c7ae0"/>
+                      <ellipse cx="20.5" cy="13.5" rx="1.5" ry="2" fill="#6c7ae0"/>
+                      <rect x="15" y="19" width="6" height="2" rx="1" fill="#6c7ae0"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="bubble">Hello! I'm your AI Solutions Architect. I can help you design robust, scalable, and secure cloud infrastructure solutions for AWS, Azure, and Google Cloud. What kind of architecture challenge are you working on today?</div>
+                    <div class="timestamp">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// View Chat History functionality
+async function viewChatHistory() {
+    const modal = document.getElementById('historyModal');
+    const historyContent = document.getElementById('historyContent');
+    
+    // Show loading state
+    historyContent.innerHTML = `
+        <div style="text-align: center; padding: 40px;">
+            <div style="color: #6b7280;">Loading chat history...</div>
+        </div>
+    `;
+    
+    modal.style.display = 'flex';
+    
+    try {
+        const fingerprint = getUserFingerprint();
+        const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_fingerprint: fingerprint,
+                limit: 50 
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            displayChatHistory(data.history);
+        } else {
+            throw new Error('Failed to load chat history');
+        }
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+        historyContent.innerHTML = `
+            <div class="empty-history">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                <div>Failed to load chat history</div>
+            </div>
+        `;
+    }
+}
+
+// Display chat history in modal
+function displayChatHistory(history) {
+    const historyContent = document.getElementById('historyContent');
+    
+    if (!history || history.length === 0) {
+        historyContent.innerHTML = `
+            <div class="empty-history">
+                <svg fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div>No chat history found</div>
+                <small>Start a conversation to see your history here</small>
+            </div>
+        `;
+        return;
+    }
+    
+    const historyHTML = history.map((chat, index) => `
+        <div class="history-item">
+            <div class="history-prompt">${escapeHtml(chat.user_message)}</div>
+            <div class="history-meta">
+                <div class="history-timestamp">${new Date(chat.timestamp).toLocaleString()}</div>
+                <button class="show-response-btn" onclick="toggleResponse(${index})" id="btn-${index}">
+                    Show Response
+                </button>
+            </div>
+            <div class="history-response" id="response-${index}" style="display: none;">
+                ${marked.parse(chat.ai_response)}
+            </div>
+        </div>
+    `).join('');
+    
+    historyContent.innerHTML = historyHTML;
+}
+
+// Toggle response visibility
+function toggleResponse(index) {
+    const responseDiv = document.getElementById(`response-${index}`);
+    const button = document.getElementById(`btn-${index}`);
+    
+    if (responseDiv.style.display === 'none') {
+        responseDiv.style.display = 'block';
+        button.textContent = 'Hide Response';
+    } else {
+        responseDiv.style.display = 'none';
+        button.textContent = 'Show Response';
+    }
+}
+
+// Close history modal
+function closeHistoryModal() {
+    document.getElementById('historyModal').style.display = 'none';
+}
+
+// Delete Chat History functionality
+async function deleteChatHistory() {
+    if (confirm('This will permanently delete all your chat history. This action cannot be undone. Continue?')) {
+        try {
+            const fingerprint = getUserFingerprint();
+            const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    user_fingerprint: fingerprint 
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    alert('Chat history deleted successfully!');
+                    // Clear current session
+                    startNewChat();
+                } else {
+                    alert('Failed to delete chat history. Please try again.');
+                }
+            } else {
+                throw new Error('Failed to delete chat history');
+            }
+        } catch (error) {
+            console.error('Error deleting chat history:', error);
+            alert('Failed to delete chat history. Please try again.');
+        }
+    }
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('historyModal');
+    if (event.target === modal) {
+        closeHistoryModal();
+    }
 });

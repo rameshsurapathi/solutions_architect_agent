@@ -123,6 +123,23 @@ class AI_Agent:
         """Get user's chat history for display purposes"""
         return self.get_chat_history(user_fingerprint, limit)
 
+    def delete_user_chat_history(self, user_fingerprint: str) -> bool:
+        """Delete all chat history for a user"""
+        try:
+            user_id = self.get_user_id(user_fingerprint)
+            
+            # Get all chat history documents for this user
+            chats = db.collection("chat_history").where("user_id", "==", user_id).stream()
+            
+            # Delete all documents
+            for chat in chats:
+                db.collection("chat_history").document(chat.id).delete()
+            
+            return True
+        except Exception as e:
+            print(f"Error deleting chat history: {e}")
+            return False
+
 def main():
 
     api_key = os.getenv("GOOGLE_API_KEY")

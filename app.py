@@ -89,4 +89,27 @@ async def get_chat_history(request: Request, history_request: ChatHistoryRequest
         "history": history
     })
 
+@app.delete("/chat-history")
+async def delete_chat_history(request: Request, history_request: ChatHistoryRequest):
+    """Delete user's chat history"""
+    client_ip = request.client.host
+    now = time.time()
+    timestamps = rate_limit_data[client_ip]
+    # Remove timestamps outside the window
+    rate_limit_data[client_ip] = [t for t in timestamps if now - t < rate_limit_window]
+    if len(rate_limit_data[client_ip]) >= rate_limit_count:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please wait.")
+    rate_limit_data[client_ip].append(now)
+
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GOOGLE_API_KEY not found in environment variables.")
+    
+    agent = AI_Agent(api_key)
+    success = agent.delete_user_chat_history(history_request.user_fingerprint)
+    return JSONResponse({
+        "success": success,
+        "message": "Chat history deleted successfully" if success else "Failed to delete chat history"
+    })
+
 
