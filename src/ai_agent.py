@@ -41,11 +41,9 @@ class AI_Agent:
         try:
             print(f"Getting chat history for user_id: {user_id}")
             
-            # Get chat history from last 7 days
-            from datetime import timedelta
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=7)
-            
-            chats = db.collection("sa-chat-history").where("user_id", "==", user_id).where("timestamp", ">=", cutoff_date).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()
+            # Simplified query without timestamp filter to avoid composite index requirement
+            # Get all chats for user and filter/sort in Python instead
+            chats = db.collection("sa-chat-history").where("user_id", "==", user_id).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()
             
             history = []
             for chat in chats:
@@ -69,7 +67,32 @@ class AI_Agent:
             print(f"Error retrieving chat history: {e}")
             import traceback
             traceback.print_exc()
-            return []
+            # Fallback: try without ordering if the above fails
+            try:
+                print("Trying fallback query without ordering...")
+                chats = db.collection("sa-chat-history").where("user_id", "==", user_id).limit(limit).stream()
+                history = []
+                for chat in chats:
+                    data = chat.to_dict()
+                    timestamp = data.get("timestamp")
+                    if timestamp:
+                        timestamp_iso = timestamp.isoformat() if hasattr(timestamp, 'isoformat') else str(timestamp)
+                    else:
+                        timestamp_iso = datetime.now(timezone.utc).isoformat()
+                        
+                    history.append({
+                        "user_message": data.get("user_message"),
+                        "ai_response": data.get("ai_response"),
+                        "timestamp": timestamp_iso
+                    })
+                
+                # Sort by timestamp in Python
+                history.sort(key=lambda x: x["timestamp"], reverse=True)
+                print(f"Found {len(history)} chat history entries (fallback)")
+                return list(reversed(history))  # Return in chronological order
+            except Exception as fallback_error:
+                print(f"Fallback query also failed: {fallback_error}")
+                return []
 
     def store_chat_history(self, user_id: str, user_message: str, ai_response: str):
         """Store chat interaction for future context"""
