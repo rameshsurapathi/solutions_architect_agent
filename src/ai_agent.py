@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import TypedDict
+from typing import TypedDict, List, Dict, Optional
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import SystemMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 import os
 from dotenv import load_dotenv
@@ -32,8 +32,50 @@ class AI_Agent:
         self.llm = init_chat_model(os.getenv("LLM_MODEL"), temperature=0.1)
         self.system_prompt = SYSTEM_PROMPT
 
+    def get_user_id(self, user_fingerprint: str) -> str:
+        """Generate a consistent user ID from browser fingerprint"""
+        return hashlib.sha256(user_fingerprint.encode()).hexdigest()[:16]
 
-    def get_response(self, user_message: str) -> str:
+    def get_chat_history(self, user_fingerprint: str, limit: int = 10) -> List[Dict]:
+        """Retrieve recent chat history for context"""
+        try:
+            user_id = self.get_user_id(user_fingerprint)
+            
+            # Get chat history from last 7 days
+            from datetime import timedelta
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=7)
+            
+            chats = db.collection("chat_history").where("user_id", "==", user_id).where("timestamp", ">=", cutoff_date).order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).stream()
+            
+            history = []
+            for chat in chats:
+                data = chat.to_dict()
+                history.append({
+                    "user_message": data.get("user_message"),
+                    "ai_response": data.get("ai_response"),
+                    "timestamp": data.get("timestamp")
+                })
+            
+            return list(reversed(history))  # Return in chronological order
+        except Exception as e:
+            print(f"Error retrieving chat history: {e}")
+            return []
+
+    def store_chat_history(self, user_fingerprint: str, user_message: str, ai_response: str):
+        """Store chat interaction for future context"""
+        try:
+            user_id = self.get_user_id(user_fingerprint)
+            
+            db.collection("chat_history").add({
+                "user_id": user_id,
+                "user_message": user_message,
+                "ai_response": ai_response,
+                "timestamp": datetime.now(timezone.utc)
+            })
+        except Exception as e:
+            print(f"Error storing chat history: {e}")
+
+    def get_response(self, user_message: str, user_fingerprint: str = None) -> str:
         # Use a hash of the user message as the cache key
         cache_key = f"ai_response:{hashlib.sha256(user_message.encode()).hexdigest()}"
         cached = db.collection("cache").document(cache_key).get()
@@ -45,20 +87,41 @@ class AI_Agent:
             else:
                 # Optionally delete expired cache
                 db.collection("cache").document(cache_key).delete()
-        # Compose messages for the LLM
-        messages = [
-            SystemMessage(content=self.system_prompt),
-            HumanMessage(content=user_message)
-        ]
+        
+        # Get chat history for context if user fingerprint is provided
+        messages = [SystemMessage(content=self.system_prompt)]
+        
+        if user_fingerprint:
+            chat_history = self.get_chat_history(user_fingerprint, limit=5)  # Last 5 conversations
+            if chat_history:
+                # Add context from previous conversations
+                context_message = "Previous conversation context:\n"
+                for chat in chat_history:
+                    context_message += f"User: {chat['user_message']}\nAssistant: {chat['ai_response'][:200]}...\n\n"
+                
+                messages.append(HumanMessage(content=f"[CONTEXT] {context_message}"))
+        
+        # Add current user message
+        messages.append(HumanMessage(content=user_message))
+        
         response = self.llm(messages)
         
-        # Store the response in Firestore cache with a 1-day expiration
+        # Store the response in Firestore cache with 1-month expiration
         from datetime import timedelta
         db.collection("cache").document(cache_key).set({
             "response": response.content,
-            "expires": datetime.now(timezone.utc) + timedelta(days=1)
+            "expires": datetime.now(timezone.utc) + timedelta(days=30)  # Extended to 1 month
         })
+        
+        # Store chat history for future context
+        if user_fingerprint:
+            self.store_chat_history(user_fingerprint, user_message, response.content)
+        
         return response.content
+
+    def get_user_chat_history(self, user_fingerprint: str, limit: int = 20) -> List[Dict]:
+        """Get user's chat history for display purposes"""
+        return self.get_chat_history(user_fingerprint, limit)
 
 def main():
 

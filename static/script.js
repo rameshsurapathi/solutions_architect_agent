@@ -1,3 +1,149 @@
+// Generate user fingerprint for session identification
+function generateUserFingerprint() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillText('Browser fingerprint', 2, 2);
+    
+    const fingerprint = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        screen.colorDepth,
+        new Date().getTimezoneOffset(),
+        !!window.sessionStorage,
+        !!window.localStorage,
+        canvas.toDataURL()
+    ].join('|');
+    
+    return btoa(fingerprint).slice(0, 32); // Base64 encode and truncate
+}
+
+// Get or create user fingerprint
+function getUserFingerprint() {
+    let fingerprint = localStorage.getItem('user_fingerprint');
+    if (!fingerprint) {
+        fingerprint = generateUserFingerprint();
+        localStorage.setItem('user_fingerprint', fingerprint);
+    }
+    return fingerprint;
+}
+
+// Load chat history on page load
+async function loadChatHistory() {
+    try {
+        const fingerprint = getUserFingerprint();
+        const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_fingerprint: fingerprint,
+                limit: 10 
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.history && data.history.length > 0) {
+                // Display chat history
+                data.history.forEach(chat => {
+                    const timestamp = new Date(chat.timestamp).toLocaleString();
+                    appendMessage(chat.user_message, false, timestamp);
+                    appendMessage(chat.ai_response, true, timestamp);
+                });
+                
+                // Add separator
+                const separator = document.createElement('div');
+                separator.className = 'chat-separator';
+                separator.innerHTML = '<hr><small>Previous conversations loaded</small><hr>';
+                chatMessages.appendChild(separator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+    } catch (error) {
+        console.log('Could not load chat history:', error);
+    }
+}
+
+function appendMessage(text, isBot = false, customTimestamp = null) {
+    const now = new Date();
+    const time = customTimestamp || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message ' + (isBot ? 'bot' : 'user');
+    let content = isBot ? cleanBotResponse(text) : text;
+    // Convert Markdown to HTML for bot responses
+    msgDiv.innerHTML = `
+        <div class="avatar">${isBot ? getBotAvatar() : '🧑'}</div>
+        <div>
+            <div class="bubble">${isBot ? marked.parse(content) : escapeHtml(content)}</div>
+            <div class="timestamp">${time}</div>
+            ${isBot ? `<button class="save-pdf-btn" onclick="saveToPDF(this)" title="Save response to PDF">📄 Save PDF</button>` : ''}
+        </div>
+    `;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}  
+    const fingerprint = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        screen.colorDepth,
+        new Date().getTimezoneOffset(),
+        !!window.sessionStorage,
+        !!window.localStorage,
+        canvas.toDataURL()
+    ].join('|');
+    
+    return btoa(fingerprint).slice(0, 32); // Base64 encode and truncate
+}
+
+// Get or create user fingerprint
+function getUserFingerprint() {
+    let fingerprint = localStorage.getItem('user_fingerprint');
+    if (!fingerprint) {
+        fingerprint = generateUserFingerprint();
+        localStorage.setItem('user_fingerprint', fingerprint);
+    }
+    return fingerprint;
+}
+
+// Load chat history on page load
+async function loadChatHistory() {
+    try {
+        const fingerprint = getUserFingerprint();
+        const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                user_fingerprint: fingerprint,
+                limit: 10 
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.history && data.history.length > 0) {
+                // Display chat history
+                data.history.forEach(chat => {
+                    const timestamp = new Date(chat.timestamp).toLocaleString();
+                    appendMessage(chat.user_message, false, timestamp);
+                    appendMessage(chat.ai_response, true, timestamp);
+                });
+                
+                // Add separator
+                const separator = document.createElement('div');
+                separator.className = 'chat-separator';
+                separator.innerHTML = '<hr><small>Previous conversations loaded</small><hr>';
+                chatMessages.appendChild(separator);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+    } catch (error) {
+        console.log('Could not load chat history:', error);
+    }
+}
+
 // Card question click event
 const cardQuestions = document.querySelectorAll('.card-questions div');
 cardQuestions.forEach(q => {
@@ -207,9 +353,9 @@ function cleanContentForPDF(content) {
     return cleaned;
 }
 
-function appendMessage(text, isBot = false) {
+function appendMessage(text, isBot = false, timestamp = '') {
     const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const time = timestamp || now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const msgDiv = document.createElement('div');
     msgDiv.className = 'message ' + (isBot ? 'bot' : 'user');
     let content = isBot ? cleanBotResponse(text) : text;
@@ -251,11 +397,15 @@ async function sendChatMessage(message) {
 
     try {
         const apiUrl = 'https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat';
+        const fingerprint = getUserFingerprint();
         
         const res = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ 
+                message: message,
+                user_fingerprint: fingerprint 
+            })
         });
         if (!res.ok) {
             throw new Error('Error: ' + res.status);
@@ -284,3 +434,8 @@ if (chatForm) {
         sendChatMessage(value);
     });
 }
+
+// Load chat history when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatHistory();
+});
