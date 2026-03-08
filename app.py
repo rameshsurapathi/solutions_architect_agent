@@ -12,9 +12,17 @@ from src.ai_agent import AI_Agent
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 # Allow CORS for local frontend
+# Allow CORS for local and deployment origins
+allowed_origins = [
+    "http://localhost:8080",
+    "http://localhost:8000",
+    "https://solutions-architect-agent-752583171069.asia-southeast1.run.app",
+    "https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

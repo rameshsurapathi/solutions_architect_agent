@@ -50,7 +50,7 @@ async function loadChatHistory() {
     try {
         const userId = await getUserId();
         console.log('User ID:', userId);
-        const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+        const response = await fetch('/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -407,7 +407,7 @@ async function sendChatMessage(message) {
     document.querySelectorAll('.card-questions div, .quick-action, .send-btn').forEach(el => el.disabled = true);
 
     try {
-        const apiUrl = 'https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat';
+        const apiUrl = '/chat';
         const userId = await getUserId();
         
         const res = await fetch(apiUrl, {
@@ -495,7 +495,7 @@ async function viewChatHistory() {
     try {
         const userId = await getUserId();
         console.log('Fetching chat history for user ID:', userId);
-        const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+        const response = await fetch('/chat-history', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -585,7 +585,7 @@ async function deleteChatHistory() {
     if (confirm('This will permanently delete all your chat history. This action cannot be undone. Continue?')) {
         try {
             const userId = await getUserId();
-            const response = await fetch('https://solutions-architect-agent-948325778469.northamerica-northeast2.run.app/chat-history', {
+            const response = await fetch('/chat-history', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
