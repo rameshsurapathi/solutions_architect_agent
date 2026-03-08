@@ -14,12 +14,27 @@ from src.prompts import SYSTEM_PROMPT
 from src.langsmith_debug import LANGSMITH_API_KEY,LANGSMITH_ENDPOINT,LANGSMITH_PROJECT,LANGSMITH_TRACING
 
 # Load environment variables from .env file
-load_dotenv()
+# Try loading from the current directory first, then from the src directory
+env_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(env_path)
 
 # setting up Firestore for caching
-from firebase_admin import firestore, initialize_app
-initialize_app()
-db = firestore.client()
+import firebase_admin
+from firebase_admin import firestore, credentials
+
+# Initialize Firebase only if not already initialized
+if not firebase_admin._apps:
+    try:
+        firebase_admin.initialize_app()
+        print("Firebase successfully initialized")
+    except Exception as e:
+        print(f"Error initializing Firebase: {e}")
+
+try:
+    db = firestore.client()
+except Exception as e:
+    print(f"Error getting Firestore client: {e}")
+    db = None
 
 import hashlib
 

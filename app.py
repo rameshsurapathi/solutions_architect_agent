@@ -7,11 +7,17 @@ from pydantic import BaseModel
 import time
 from collections import defaultdict
 import os
+import traceback
+from dotenv import load_dotenv
+
+# Load environment variables from the root or from src/
+load_dotenv() # checks root
+load_dotenv(os.path.join(os.path.dirname(__file__), "src", ".env")) # checks src/
+
 from src.ai_agent import AI_Agent
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
-# Allow CORS for local frontend
 # Allow CORS for local and deployment origins
 allowed_origins = [
     "http://localhost:8080",
@@ -48,6 +54,16 @@ class ChatRequest(BaseModel):
 class ChatHistoryRequest(BaseModel):
     user_id: str
     limit: int = 10
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler to log tracebacks"""
+    print(f"ERROR: Unhandled exception in {request.method} {request.url}")
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "traceback": traceback.format_exc() if os.getenv("DEBUG") else None}
+    )
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -122,4 +138,6 @@ async def delete_chat_history(request: Request, history_request: ChatHistoryRequ
         "message": "Chat history deleted successfully" if success else "Failed to delete chat history"
     })
 
-
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
