@@ -10,6 +10,6 @@ fastapi
 uvicorn
 jinja2
 #redis
-firebase-admin
+boto3
 datetime
 
