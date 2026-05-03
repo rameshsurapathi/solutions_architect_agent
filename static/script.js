@@ -99,7 +99,7 @@ async function loadChatHistory() {
                     }
                     
                     appendMessage(chat.user_message, false, displayTime);
-                    appendMessage(chat.ai_response, true, displayTime);
+                    appendMessage(chat.bot_response || "", true, displayTime);
                 });
                 
                 // Remove the restore indicator after a brief moment
@@ -553,7 +553,7 @@ function displayChatHistory(history) {
                 </button>
             </div>
             <div class="history-response" id="response-${index}" style="display: none;">
-                ${marked.parse(chat.ai_response)}
+                ${marked.parse(chat.bot_response || "")}
             </div>
         </div>
     `).join('');
