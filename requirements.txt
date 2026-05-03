@@ -13,3 +13,5 @@ jinja2
 boto3
 datetime
 
+boto3
+langchain-google-genai
