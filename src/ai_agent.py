@@ -45,9 +45,13 @@ class AI_Agent:
         history.append({'user_message': user_message, 'bot_response': bot_response, 'timestamp': datetime.now(timezone.utc).isoformat()})
         self.storage.save_history(user_id, history)
 
-    def get_chat_history(self, user_id: str, limit: int = 10):
+    def get_user_chat_history(self, user_id: str, limit: int = 10):
         history = self.storage.get_history(user_id)
         return history[-limit:]
+
+    def delete_user_chat_history(self, user_id: str):
+        self.storage.delete_history(user_id)
+        return True
 
 def main():
     agent = AI_Agent(os.getenv("GOOGLE_API_KEY"))
