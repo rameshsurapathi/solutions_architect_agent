@@ -2,16 +2,14 @@
 langgraph
 langsmith
 langchain
-dotenv
-langchain-google-genai
+python-dotenv
 
-# fast api for building APIs
+# FastAPI for building APIs
 fastapi
-uvicorn
+uvicorn[standard]
 jinja2
-#redis
 boto3
-datetime
 
-boto3
+# Additional dependencies
+pydantic
 langchain-google-genai
